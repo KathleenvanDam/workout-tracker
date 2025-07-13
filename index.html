@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Tracker</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+        
+        // Simple icons as text since we can't import lucide-react
+        const Check = () => '✓';
+        const Calendar = () => '📅';
+        const Trophy = () => '🏆';
+        const Target = () => '🎯';
+        
+        const WorkoutTracker = () => {
+          const today = new Date();
+          const [currentDate, setCurrentDate] = useState(today);
+          const [workouts, setWorkouts] = useState({});
+          const [view, setView] = useState('week');
+
+          const preferredDays = [2, 3, 5, 6]; // Tuesday, Wednesday, Friday, Saturday
+          const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+          const monthNames = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+          ];
+
+          const getWeekStart = (date) => {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            return new Date(d.setDate(diff));
+          };
+
+          const getCurrentWeekDates = () => {
+            const weekStart = getWeekStart(currentDate);
+            const dates = [];
+            for (let i = 0; i < 7; i++) {
+              const date = new Date(weekStart);
+              date.setDate(weekStart.getDate() + i);
+              dates.push(date);
+            }
+            return dates;
+          };
+
+          const getDateKey = (date) => {
+            return date.toISOString().split('T')[0];
+          };
+
+          const toggleWorkout = (date) => {
+            const key = getDateKey(date);
+            setWorkouts(prev => ({
+              ...prev,
+              [key]: !prev[key]
+            }));
+          };
+
+          const getWeekWorkoutCount = (weekDates) => {
+            return weekDates.filter(date => workouts[getDateKey(date)]).length;
+          };
+
+          const navigatePrevious = () => {
+            if (view === 'week') {
+              setCurrentDate(prev => {
+                const newDate = new Date(prev);
+                newDate.setDate(prev.getDate() - 7);
+                return newDate;
+              });
+            } else {
+              setCurrentDate(prev => {
+                const newDate = new Date(prev);
+                newDate.setMonth(prev.getMonth() - 1);
+                return newDate;
+              });
+            }
+          };
+
+          const navigateNext = () => {
+            if (view === 'week') {
+              setCurrentDate(prev => {
+                const newDate = new Date(prev);
+                newDate.setDate(prev.getDate() + 7);
+                return newDate;
+              });
+            } else {
+              setCurrentDate(prev => {
+                const newDate = new Date(prev);
+                newDate.setMonth(prev.getMonth() + 1);
+                return newDate;
+              });
+            }
+          };
+
+          const goToToday = () => {
+            setCurrentDate(new Date());
+          };
+
+          const currentWeekDates = getCurrentWeekDates();
+          const currentWeekCount = getWeekWorkoutCount(currentWeekDates);
+
+          return (
+            <div className="max-w-4xl mx-auto p-6 bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen">
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500 rounded-lg">
+                      <span className="text-white text-xl">📅</span>
+                    </div>
+                    <div>
+                      <h1 className="text-2xl font-bold text-gray-800">Workout Tracker</h1>
+                      <p className="text-gray-600">Stay consistent with your fitness goals</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Goal Achievement Banner */}
+                {currentWeekCount >= 4 && view === 'week' && (
+                  <div className="bg-gradient-to-r from-green-400 to-green-500 text-white p-4 rounded-lg mb-6 text-center">
+                    <div className="text-4xl mb-2">🏆</div>
+                    <p className="font-bold text-lg">🎉 Goal Achieved! 🎉</p>
+                    <p>You've completed all 4 workouts this week!</p>
+                  </div>
+                )}
+
+                {/* Navigation */}
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    onClick={navigatePrevious}
+                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium"
+                  >
+                    ← Previous
+                  </button>
+                  
+                  <div className="text-center">
+                    <h2 className="text-xl font-semibold text-gray-800">
+                      {view === 'week' 
+                        ? `Week of ${currentWeekDates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${currentWeekDates[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                        : `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`
+                      }
+                    </h2>
+                    <button
+                      onClick={goToToday}
+                      className="text-blue-500 hover:text-blue-700 text-sm mt-1"
+                    >
+                      Go to Today
+                    </button>
+                  </div>
+                  
+                  <button
+                    onClick={navigateNext}
+                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium"
+                  >
+                    Next →
+                  </button>
+                </div>
+
+                {/* View Toggle */}
+                <div className="flex justify-center gap-2 mb-6">
+                  <button
+                    onClick={() => setView('week')}
+                    className={`px-4 py-2 rounded-lg font-medium ${
+                      view === 'week' 
+                        ? 'bg-blue-500 text-white' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Week View
+                  </button>
+                  <button
+                    onClick={() => setView('month')}
+                    className={`px-4 py-2 rounded-lg font-medium ${
+                      view === 'month' 
+                        ? 'bg-blue-500 text-white' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Month View
+                  </button>
+                </div>
+
+                {/* Calendar */}
+                <div className="grid grid-cols-7 gap-2 mb-6">
+                  {currentWeekDates.map((date, index) => {
+                    const isCompleted = workouts[getDateKey(date)];
+                    const isPreferred = preferredDays.includes(date.getDay());
+                    const isToday = date.toDateString() === today.toDateString();
+                    
+                    return (
+                      <div key={index} className="text-center">
+                        <div className="text-sm font-medium text-gray-600 mb-2">
+                          {dayNames[index]}
+                        </div>
+                        <button
+                          onClick={() => toggleWorkout(date)}
+                          className={`w-full h-16 rounded-lg border-2 transition-all duration-200 flex items-center justify-center relative ${
+                            isCompleted
+                              ? 'bg-green-500 border-green-500 text-white'
+                              : isPreferred
+                              ? 'border-blue-300 bg-blue-50 hover:bg-blue-100'
+                              : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+                          } ${isToday ? 'ring-2 ring-blue-400' : ''}`}
+                        >
+                          <div className="text-center">
+                            <div className={`text-lg font-semibold ${isCompleted ? 'text-white' : 'text-gray-700'}`}>
+                              {date.getDate()}
+                            </div>
+                            {isCompleted && (
+                              <span className="absolute top-1 right-1 text-white">✓</span>
+                            )}
+                            {isPreferred && !isCompleted && (
+                              <div className="w-2 h-2 bg-blue-400 rounded-full absolute bottom-1 right-1"></div>
+                            )}
+                          </div>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Weekly Goals */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Weekly Goals</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">🎯</span>
+                        <div>
+                          <p className="text-blue-800 font-medium">Target</p>
+                          <p className="text-sm text-blue-600">4 workouts per week</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">✓</span>
+                        <div>
+                          <p className="text-green-800 font-medium">Progress</p>
+                          <p className="text-sm text-green-600">{currentWeekCount} of 4 completed</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600">
+                      <strong>Preferred days:</strong> Tuesday, Wednesday, Friday, Saturday
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Feel free to adjust days as needed - just aim for 4 workouts total!
+                    </p>
+                  </div>
+                </div>
+
+                {/* Legend */}
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-blue-50 border border-blue-300 rounded"></div>
+                    <span className="text-gray-600">Preferred days (Tue, Wed, Fri, Sat)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-green-500 rounded"></div>
+                    <span className="text-gray-600">Completed workout</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-blue-400 rounded"></div>
+                    <span className="text-gray-600">Today</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        ReactDOM.render(<WorkoutTracker />, document.getElementById('root'));
+    </script>
+</body>
+</html>
