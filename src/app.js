@@ -445,4 +445,4 @@ const WorkoutTracker = () => {
   );
 };
 
-export default WorkoutTracker;
+export default App;
